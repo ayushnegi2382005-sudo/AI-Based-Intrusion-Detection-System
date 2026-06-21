@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IDS Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body style="margin:0; font-family:Segoe UI; background:#0f172a; color:white;">
+
+<h1 style="text-align:center; padding:20px;">🛡️ IDS Dashboard</h1>
+
+<div style="text-align:center;">
+    <button onclick="start()" style="padding:10px 20px;">▶ Start</button>
+    <button onclick="stop()" style="padding:10px 20px;">⏹ Stop</button>
+</div>
+
+<h2 id="status" style="text-align:center;">Idle</h2>
+
+<!-- Stats Cards -->
+<div style="display:flex; justify-content:center; gap:20px; margin:20px;">
+    <div style="background:#1e293b; padding:20px; border-radius:10px;">
+        <h3>🚨 Attacks</h3>
+        <h2 id="attackCount">0</h2>
+    </div>
+    <div style="background:#1e293b; padding:20px; border-radius:10px;">
+        <h3>✅ Normal</h3>
+        <h2 id="normalCount">0</h2>
+    </div>
+</div>
+
+<canvas id="chart" style="max-width:600px; margin:auto;"></canvas>
+
+<h3 style="text-align:center;">📡 Live Alerts</h3>
+
+<div id="logs" style="
+    max-width:800px;
+    margin:auto;
+    height:250px;
+    overflow-y:auto;
+    background:#020617;
+    padding:10px;
+    border-radius:10px;
+"></div>
+
+<script>
+let chart = new Chart(document.getElementById("chart"), {
+    type: 'doughnut',
+    data: {
+        labels: ['Attack', 'Normal'],
+        datasets: [{
+            data: [0, 0]
+        }]
+    }
+});
+
+function start(){
+    fetch('/start');
+    document.getElementById("status").innerText="Running";
+}
+
+function stop(){
+    fetch('/stop');
+    document.getElementById("status").innerText="Stopped";
+}
+
+function update(){
+    fetch('/stats')
+    .then(r=>r.json())
+    .then(data=>{
+
+        document.getElementById("attackCount").innerText = data.attack;
+        document.getElementById("normalCount").innerText = data.normal;
+
+        chart.data.datasets[0].data=[data.attack, data.normal];
+        chart.update();
+
+        let html="";
+        data.logs.slice(0,10).forEach(l=>{
+            html += `<div style="background:#7f1d1d; padding:8px; margin:5px; border-radius:5px;">
+                        ${l}
+                     </div>`;
+        });
+
+        document.getElementById("logs").innerHTML = html;
+    });
+}
+
+setInterval(update,2000);
+</script>
+
+</body>
+</html>
